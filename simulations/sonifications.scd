@@ -38,9 +38,17 @@ OSCdef(\fromPython, {|msg|
 			var positions, velocities, freqs;
 			#positions, i = msg.parseOscArray(5);
 			#velocities, i = msg.parseOscArray(i);
-			//freqs = velocities * 5000.0;
-			freqs = velocities.collect {|val| if(val >= 0) { val.abs.linexp(0.0, 1.0, 2000, 8000) } { val.abs.linexp(0.0, 1.0, 70, 2000) }  };
-			freqs.postln;
+
+			// Map angular velocity to pitch (phase coherence audible as convergence on a single tone)
+			freqs = velocities.collect {|val| if(val >= 0) { val.linlin(0.0, 1.0, 2000, 8000) } { (1-val.abs).linlin(0.0, 1.0, 70, 2000) }  };
+
+			// Map angular position to pitch (phase coherence audible as a stable harmonic arrangement)
+			//freqs = positions.collect {|val| val=val.sin; if(val >= 0) { val.linlin(0.0, 1.0, 70, 2000) } { (val.abs).linlin(0.0, 1.0, 2000, 8000) }  };
+
+
+			//freqs.postln;
+			//velocities.postln;
+			//positions.postln;
 			//"time: %\n  pos: %\n  vel: %".format(time, positions, velocities).postln;
 			//"time: %\n  freq: %".format(time, freqs).postln;
 			v.set(\freqs, freqs);
@@ -62,7 +70,12 @@ u;
 );
 
 
-( // Lotka Volterra
+
+/****
+Lotka Volterra
+with two populations
+****/
+(
 v = Ndef(\sonification, {
 	var tau = \tau.kr(0, 0.1).abs;
 	var xv = \xv.kr(0, 0.1).abs;
@@ -77,24 +90,52 @@ v = Ndef(\sonification, {
 });
 );
 
-( // KuramotoBasic with 10 oscillators
-~freqs = 100!20;
-~amps = 1.0!20;
-~phases = 0.0!20;
+
+/****
+KuramotoBasic
+with 20 oscillators
+*****/
+(
+// Sonification as pitch
 v = Ndef(\sonification, {
 	var freqs = \freqs.kr(#[100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100], 0.05);
 	var amps = \amps.kr(#[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], 0.05);
 	var phases = \phases.kr(#[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], 0.05);
 	var gain = \gain.kr(1.0, 2.0).abs;
-	var sig = SinOsc.ar(freqs, phases, amps);
+	var sig = SinOsc.ar(freqs, phases, amps * 0.2);
 	sig = Splay.ar(sig);
 	sig = Limiter.ar(sig);
 	sig * gain;
 });
+
 );
+
+
+Scale.major.ratios2(0, 20, 1);
+
+(
+// Metronomes
+~metro_pitches = [ 1.0, 1.1224620483089, 1.2599210498937, 1.3348398541685, 1.4983070768743, 1.6817928305039, 1.8877486253586, 1.9999999999945, 2.2449240966115, 2.5198420997804, 2.6696797083296, 2.9966141537402, 3.3635856609985, 3.7754972507067, 3.9999999999778, 4.4898481932105, 5.0396841995469, 5.3393594166444, 5.9932283074638, 6.7271713219784 ];
+v = Ndef(\sonification, {
+	var freqs = \freqs.kr(#[100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100], 0.05);
+	var pitches = ~metro_pitches * \a3.f;
+	var amps = \amps.kr(#[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], 0.05);
+	var phases = \phases.kr(#[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], 0.05);
+	var gain = \gain.kr(1.0, 2.0).abs;
+	var sig = SinOsc.ar(freqs.log10 / 10.0, phases, amps);
+	var t_clicks = sig > 0.0;
+	sig = SinOsc.ar(pitches, phases, amps) * EnvGen.ar(Env.perc(0.01, 0.2), t_clicks);
+	sig = Splay.ar(sig);
+	sig = Limiter.ar(sig);
+	sig * gain;
+});
+
+);
+
+
 
 v.set(\freqs, 200!20);
 
-f.unit(\verb, 2, "sonification() lpf(co10000 cv5000) rev()");
+f.unit(\verb, 2, "sonification() lpf(co10000 cv5000) rev(hi0.2)");
 v.set(\gain, 0);
 v.set(\gain, 1);
