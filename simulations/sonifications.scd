@@ -40,10 +40,10 @@ OSCdef(\fromPython, {|msg|
 			#velocities, i = msg.parseOscArray(i);
 
 			// Map angular velocity to pitch (phase coherence audible as convergence on a single tone)
-			freqs = velocities.collect {|val| if(val >= 0) { val.linlin(0.0, 1.0, 2000, 8000) } { (1-val.abs).linlin(0.0, 1.0, 70, 2000) }  };
+			freqs = velocities.collect {|val| if(val >= 0) { val.linexp(0.0, 1.0, 1000, 8000) } { (1-val.abs).linexp(0.0, 1.0, 70, 1000) }  };
 
 			// Map angular position to pitch (phase coherence audible as a stable harmonic arrangement)
-			//freqs = positions.collect {|val| val=val.sin; if(val >= 0) { val.linlin(0.0, 1.0, 70, 2000) } { (val.abs).linlin(0.0, 1.0, 2000, 8000) }  };
+			//freqs = positions.collect {|val| val=val.sin; if(val >= 0) { val.linexp(0.0, 1.0, 1000, 8000) } { (1.0-val.abs).linexp(0.0, 1.0, 80, 1000) }  };
 
 
 			//freqs.postln;
@@ -98,9 +98,9 @@ with 20 oscillators
 (
 // Sonification as pitch
 v = Ndef(\sonification, {
-	var freqs = \freqs.kr(#[100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100], 0.05);
-	var amps = \amps.kr(#[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], 0.05);
-	var phases = \phases.kr(#[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], 0.05);
+	var freqs = \freqs.kr(#[100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100], 0.1);
+	var amps = \amps.kr(#[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], 0.1);
+	var phases = \phases.kr(#[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], 0.1);
 	var gain = \gain.kr(1.0, 2.0).abs;
 	var sig = SinOsc.ar(freqs, phases, amps * 0.2);
 	sig = Splay.ar(sig);
@@ -134,7 +134,7 @@ v = Ndef(\sonification, {
 
 
 
-v.set(\freqs, 200!20);
+v.set(\freqs, 300!20);
 
 f.unit(\verb, 2, "sonification() lpf(co10000 cv5000) rev(hi0.2)");
 v.set(\gain, 0);
